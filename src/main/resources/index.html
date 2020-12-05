@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SimpleFileServer</title>
+</head>
+<body>
+
+    <div>#(title)</div>
+
+    <ul>
+        #for(vo: voList)
+        <li>
+            <a href="#(vo.url)" isFile="#(vo.voIsFile)">#(vo.displayName)</a>
+        </li>
+        #end
+    </ul>
+
+    <script type="text/javascript" src="/webjars/webjar-jquery/3.5.1/dist/jquery.min.js"></script>
+    <script>
+        $("a[isFile=true]").click(function () {
+            window.open("about:blank").location.href = $(this).attr("href");
+            return false;
+        });
+    </script>
+</body>
+</html>

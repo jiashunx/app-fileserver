@@ -1,13 +1,19 @@
 package io.github.jiashunx.simplefileserver;
 
+import com.jfinal.kit.Kv;
+import com.jfinal.template.Engine;
+import com.jfinal.template.Template;
 import io.github.jiashunx.masker.rest.framework.MRestServer;
+import io.github.jiashunx.masker.rest.framework.util.IOUtils;
 import io.github.jiashunx.masker.rest.framework.util.MRestUtils;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +29,7 @@ public class SimpleFileServerBoot {
                 .contextPath("/")
                 .filter("/*", (request, response, filterChain) -> {
                     String requestUrl = request.getUrl();
-                    if (requestUrl.equals("/fileupload") || requestUrl.equals("/filedownload")) {
+                    if (requestUrl.startsWith("/webjars")) {
                         filterChain.doFilter(request, response);
                         return;
                     }
@@ -34,34 +40,91 @@ public class SimpleFileServerBoot {
                         response.write(HttpResponseStatus.NOT_FOUND);
                     } else if (file.isDirectory()) {
                         File[] childFileArr = file.listFiles();
-                        List<String> fileNameList = new ArrayList<>();
+                        assert childFileArr != null;
+                        List<FileVo> voList = new ArrayList<>(childFileArr.length + 1);
                         if (!requestUrl.equals("/")) {
-                            fileNameList.add("../");
-                        }
-                        if (childFileArr != null) {
-                            for (File f: childFileArr) {
-                                fileNameList.add(f.getAbsolutePath().substring(boot.rootPath.length() - 1));
+                            FileVo vo = new FileVo();
+                            vo.absolutePath = file.getParentFile().getAbsolutePath() + File.separator;
+                            vo.displayName = "../";
+                            if (vo.absolutePath.equals(boot.rootPath)) {
+                                vo.url = "/";
+                            } else {
+                                vo.url = vo.absolutePath.substring(boot.rootPath.length() - 1);
                             }
+                            vo.voIsFile = false;
+                            vo.voIsDirectory = true;
+                            voList.add(vo);
                         }
-                        response.writeString(String.format("request for list directory: %s", fileNameList));
+                        for (File f: childFileArr) {
+                            FileVo vo = new FileVo();
+                            vo.absolutePath = f.getAbsolutePath() + File.separator;
+                            vo.displayName = f.getName();
+                            vo.url = vo.absolutePath.substring(boot.rootPath.length() - 1);
+                            vo.voIsFile = f.isFile();
+                            vo.voIsDirectory = f.isDirectory();
+                            voList.add(vo);
+                        }
+                        Engine engine = Engine.use();
+                        engine.setDevMode(true);
+                        Template template = engine.getTemplateByString(boot.templateContent);
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        Kv kv = new Kv();
+                        kv.set("title", localPath);
+                        kv.set("voList", voList);
+                        template.render(kv, baos);
+                        response.write(baos.toByteArray());
                     } else if (file.isFile()) {
-                        response.writeString("request for download file");
+                        response.write(file);
                     } else {
                         response.write(HttpResponseStatus.NOT_FOUND);
                     }
-                })
-                .fileupload("/fileupload", (request) -> {
-                    // TODO file upload.
-                })
-                .filedownload("/filedownload", (request, response) -> {
-                    // TODO file download. 适用于下载多个
                 })
                 .start();
         logger.info("working directory: root path: {}", boot.rootPath);
     }
 
+    public static class FileVo {
+        private String absolutePath;
+        private String displayName;
+        private String url;
+        private boolean voIsFile;
+        private boolean voIsDirectory;
+
+        public String getAbsolutePath() {
+            return absolutePath;
+        }
+        public void setAbsolutePath(String absolutePath) {
+            this.absolutePath = absolutePath;
+        }
+        public String getDisplayName() {
+            return displayName;
+        }
+        public void setDisplayName(String displayName) {
+            this.displayName = displayName;
+        }
+        public String getUrl() {
+            return url;
+        }
+        public void setUrl(String url) {
+            this.url = url;
+        }
+        public boolean getVoIsFile() {
+            return voIsFile;
+        }
+        public void setVoIsFile(boolean voIsFile) {
+            this.voIsFile = voIsFile;
+        }
+        public boolean getVoIsDirectory() {
+            return voIsDirectory;
+        }
+        public void setVoIsDirectory(boolean voIsDirectory) {
+            this.voIsDirectory = voIsDirectory;
+        }
+    }
+
     private final CommandLine commandLine;
     private final String rootPath;
+    private final String templateContent;
 
     private SimpleFileServerBoot(String[] args) throws ParseException {
         CommandLineParser commandLineParser = new BasicParser();
@@ -70,6 +133,7 @@ public class SimpleFileServerBoot {
         options.addOption("p", "port", true, "server port(default 8080)");
         this.commandLine = commandLineParser.parse(options, args);
         this.rootPath = MRestUtils.getUserDirPath();
+        this.templateContent = IOUtils.loadFileContentFromClasspath("index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
     }
 
     private int getServerProt() {
