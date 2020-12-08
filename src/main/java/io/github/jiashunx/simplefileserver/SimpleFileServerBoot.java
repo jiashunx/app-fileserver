@@ -33,7 +33,7 @@ public class SimpleFileServerBoot {
                         filterChain.doFilter(request, response);
                         return;
                     }
-                    String localPath = boot.rootPath + requestUrl.replace("/", File.separator).substring(1);
+                    String localPath = boot.getRootPath() + requestUrl.replace("/", File.separator).substring(1);
                     logger.info("request path: {}", localPath);
                     File file = new File(localPath);
                     if (!file.exists()) {
@@ -46,10 +46,10 @@ public class SimpleFileServerBoot {
                             FileVo vo = new FileVo();
                             vo.absolutePath = file.getParentFile().getAbsolutePath() + File.separator;
                             vo.displayName = "../";
-                            if (vo.absolutePath.equals(boot.rootPath)) {
+                            if (vo.absolutePath.equals(boot.getRootPath())) {
                                 vo.url = "/";
                             } else {
-                                vo.url = vo.absolutePath.substring(boot.rootPath.length() - 1);
+                                vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
                             }
                             vo.voIsFile = false;
                             vo.voIsDirectory = true;
@@ -59,7 +59,7 @@ public class SimpleFileServerBoot {
                             FileVo vo = new FileVo();
                             vo.absolutePath = f.getAbsolutePath() + File.separator;
                             vo.displayName = f.getName();
-                            vo.url = vo.absolutePath.substring(boot.rootPath.length() - 1);
+                            vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
                             vo.voIsFile = f.isFile();
                             vo.voIsDirectory = f.isDirectory();
                             voList.add(vo);
@@ -80,7 +80,7 @@ public class SimpleFileServerBoot {
                     }
                 })
                 .start();
-        logger.info("working directory: root path: {}", boot.rootPath);
+        logger.info("working directory: root path: {}", boot.getRootPath());
     }
 
     public static class FileVo {
@@ -123,7 +123,6 @@ public class SimpleFileServerBoot {
     }
 
     private final CommandLine commandLine;
-    private final String rootPath;
     private final String templateContent;
 
     private SimpleFileServerBoot(String[] args) throws ParseException {
@@ -131,8 +130,8 @@ public class SimpleFileServerBoot {
         Options options = new Options();
         // java -jar xx.jar -p 8080 --port 8080
         options.addOption("p", "port", true, "server port(default 8080)");
+        options.addOption("path", true, "directory root path");
         this.commandLine = commandLineParser.parse(options, args);
-        this.rootPath = MRestUtils.getUserDirPath();
         this.templateContent = IOUtils.loadFileContentFromClasspath("index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
     }
 
@@ -145,6 +144,24 @@ public class SimpleFileServerBoot {
             serverPort = Integer.parseInt(commandLine.getOptionValue("port"));
         }
         return serverPort;
+    }
+
+    private String getRootPath() {
+        if (commandLine.hasOption("path")) {
+            String rootPath = commandLine.getOptionValue("path").replace("\\", "/");
+            while (rootPath.length() > 1 && rootPath.endsWith("/")) {
+                rootPath = rootPath.substring(1);
+            }
+            if (rootPath.length() > 1) {
+                rootPath = rootPath + "/";
+            }
+            File file = new File(rootPath);
+            if (file.exists() && file.isDirectory()) {
+                return rootPath;
+            }
+            throw new IllegalArgumentException("illegal argument: path not exists or isn't directory");
+        }
+        return MRestUtils.getUserDirPath();
     }
 
 }
