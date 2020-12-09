@@ -29,7 +29,7 @@ public class SimpleFileServerBoot {
                 .contextPath("/")
                 .filter("/*", (request, response, filterChain) -> {
                     String requestUrl = request.getUrl();
-                    if (requestUrl.startsWith("/webjars")) {
+                    if (requestUrl.startsWith("/webjars") || requestUrl.equals("/404.html")) {
                         filterChain.doFilter(request, response);
                         return;
                     }
@@ -37,7 +37,7 @@ public class SimpleFileServerBoot {
                     logger.info("request path: {}", localPath);
                     File file = new File(localPath);
                     if (!file.exists()) {
-                        response.write(HttpResponseStatus.NOT_FOUND);
+                        response.forward("/404.html", request);
                     } else if (file.isDirectory()) {
                         File[] childFileArr = file.listFiles();
                         assert childFileArr != null;
