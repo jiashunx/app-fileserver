@@ -33,10 +33,12 @@ public class SimpleFileServerBoot {
                         filterChain.doFilter(request, response);
                         return;
                     }
-                    String localPath = boot.getRootPath() + requestUrl.replace("/", File.separator).substring(1);
+                    String localPath = boot.getRootPath() + requestUrl.substring(1);
                     logger.info("request path: {}", localPath);
                     File file = new File(localPath);
-                    if (!file.exists()) {
+                    if (!file.exists()
+                            // 防止类似/path/../../file的情况
+                            || !formatPath(file.getAbsolutePath() + File.separator).startsWith(boot.getRootPath())) {
                         response.forward("/404.html", request);
                     } else if (file.isDirectory()) {
                         File[] childFileArr = file.listFiles();
@@ -44,7 +46,7 @@ public class SimpleFileServerBoot {
                         List<FileVo> voList = new ArrayList<>(childFileArr.length + 1);
                         if (!requestUrl.equals("/")) {
                             FileVo vo = new FileVo();
-                            vo.absolutePath = file.getParentFile().getAbsolutePath() + File.separator;
+                            vo.absolutePath = formatPath(file.getParentFile().getAbsolutePath() + File.separator);
                             vo.displayName = "../";
                             if (vo.absolutePath.equals(boot.getRootPath())) {
                                 vo.url = "/";
@@ -57,8 +59,8 @@ public class SimpleFileServerBoot {
                         }
                         for (File f: childFileArr) {
                             FileVo vo = new FileVo();
-                            vo.absolutePath = f.getAbsolutePath() + File.separator;
-                            vo.displayName = f.getName();
+                            vo.absolutePath = formatPath(f.getAbsolutePath() + File.separator);
+                            vo.displayName = f.getName() + (f.isDirectory() ? "/" : "");
                             vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
                             vo.voIsFile = f.isFile();
                             vo.voIsDirectory = f.isDirectory();
@@ -157,11 +159,15 @@ public class SimpleFileServerBoot {
             }
             File file = new File(rootPath);
             if (file.exists() && file.isDirectory()) {
-                return rootPath;
+                return formatPath(file.getAbsolutePath() + File.separator);
             }
             throw new IllegalArgumentException("illegal argument: path not exists or isn't directory");
         }
-        return MRestUtils.getUserDirPath();
+        return formatPath(MRestUtils.getUserDirPath());
+    }
+
+    private static String formatPath(String path) {
+        return path.replace("\\", "/");
     }
 
 }
