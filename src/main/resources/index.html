@@ -6,30 +6,32 @@
 </head>
 <body>
 
-    <div>#(title)</div>
+    <div style="margin-left: 25px; margin-top: 25px;">
+        <div>#(title)</div>
 
-    <p>
-        <label for="CheckAll">
-            <input id="CheckAll" class="sfs-input" name="CheckAll" type="checkbox" />
-        </label>
-        <label>全选</label>
-        &nbsp;
-        &nbsp;
-        <button id="btn-download">下载</button>
-        <button id="btn-delete" type="button">删除</button>
-        <button id="btn-upload">上传</button>
-    </p>
-
-    <ul>
-        #for(vo: voList)
-        <li>
-            <label>
-                <input name="CheckOne" class="sfs-input" type="checkbox" />
+        <p>
+            <label for="CheckAll">
+                <input id="CheckAll" class="sfs-input" name="CheckAll" type="checkbox" />
             </label>
-            <a href="#(vo.url)" isFile="#(vo.voIsFile)">#(vo.displayName)</a>
-        </li>
-        #end
-    </ul>
+            <label>全选</label>
+            &nbsp;
+            &nbsp;
+            <button id="btn-download">下载</button>
+            <button id="btn-delete" type="button">删除</button>
+            <button id="btn-upload">上传</button>
+        </p>
+
+        <ul>
+            #for(vo: voList)
+            <li>
+                <label>
+                    <input name="CheckOne" class="sfs-input" type="checkbox" />
+                </label>
+                <a href="#(vo.url)" isFile="#(vo.voIsFile)">#(vo.displayName)</a>
+            </li>
+            #end
+        </ul>
+    </div>
 
     <script type="text/javascript" src="/webjars/webjar-jquery/3.5.1/dist/jquery.min.js"></script>
     <script>
