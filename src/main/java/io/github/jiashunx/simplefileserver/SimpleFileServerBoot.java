@@ -6,7 +6,6 @@ import com.jfinal.template.Template;
 import io.github.jiashunx.masker.rest.framework.MRestServer;
 import io.github.jiashunx.masker.rest.framework.util.IOUtils;
 import io.github.jiashunx.masker.rest.framework.util.MRestUtils;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,12 +28,15 @@ public class SimpleFileServerBoot {
                 .contextPath("/")
                 .filter("/*", (request, response, filterChain) -> {
                     String requestUrl = request.getUrl();
-                    if (requestUrl.startsWith("/webjars") || requestUrl.equals("/404.html")) {
+                    if (requestUrl.startsWith("/webjars")
+                            || requestUrl.equals("/404.html")
+                            || requestUrl.equals("/DeleteFiles")
+                            || requestUrl.equals("/DownloadFiles")
+                            || requestUrl.equals("/UploadFiles")) {
                         filterChain.doFilter(request, response);
                         return;
                     }
                     String localPath = boot.getRootPath() + requestUrl.substring(1);
-                    logger.info("request path: {}", localPath);
                     File file = new File(localPath);
                     if (!file.exists()
                             // 防止类似/path/../../file的情况
@@ -61,6 +63,7 @@ public class SimpleFileServerBoot {
                             FileVo vo = new FileVo();
                             vo.absolutePath = formatPath(f.getAbsolutePath() + File.separator);
                             vo.displayName = f.getName() + (f.isDirectory() ? "/" : "");
+                            vo.fileName = f.getName();
                             vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
                             vo.voIsFile = f.isFile();
                             vo.voIsDirectory = f.isDirectory();
@@ -78,16 +81,41 @@ public class SimpleFileServerBoot {
                     } else if (file.isFile()) {
                         response.write(file);
                     } else {
-                        response.write(HttpResponseStatus.NOT_FOUND);
+                        response.forward("/404.html", request);
                     }
                 })
+                .post("/DeleteFiles", (request, response) -> {
+                    SubmitFileVo fileVo = request.parseBodyToObj(SubmitFileVo.class);
+                    // TODO 执行删除文件操作（需要注意待删除文件地址的校验）
+                })
+                .filedownload("/DownloadFiles", (request, response) -> {})
+                .fileupload("/UploadFiles", (request, response) -> {})
                 .start();
         logger.info("working directory: root path: {}", boot.getRootPath());
+    }
+
+    public static class SubmitFileVo {
+        private String path;
+        private List<String> files;
+
+        public String getPath() {
+            return path;
+        }
+        public void setPath(String path) {
+            this.path = path;
+        }
+        public List<String> getFiles() {
+            return files;
+        }
+        public void setFiles(List<String> files) {
+            this.files = files;
+        }
     }
 
     public static class FileVo {
         private String absolutePath;
         private String displayName;
+        private String fileName;
         private String url;
         private boolean voIsFile;
         private boolean voIsDirectory;
@@ -103,6 +131,12 @@ public class SimpleFileServerBoot {
         }
         public void setDisplayName(String displayName) {
             this.displayName = displayName;
+        }
+        public String getFileName() {
+            return fileName;
+        }
+        public void setFileName(String fileName) {
+            this.fileName = fileName;
         }
         public String getUrl() {
             return url;

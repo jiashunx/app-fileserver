@@ -7,7 +7,7 @@
 <body>
 
     <div style="margin-left: 25px; margin-top: 25px;">
-        <div>#(title)</div>
+        <div id="Title">#(title)</div>
 
         <p>
             <label for="CheckAll">
@@ -16,16 +16,16 @@
             <label>全选</label>
             &nbsp;
             &nbsp;
-            <button id="btn-download">下载</button>
+            <button id="btn-download" type="button">下载</button>
             <button id="btn-delete" type="button">删除</button>
-            <button id="btn-upload">上传</button>
+            <button id="btn-upload" type="button">上传</button>
         </p>
 
         <ul>
             #for(vo: voList)
             <li>
                 <label>
-                    <input name="CheckOne" class="sfs-input" type="checkbox" />
+                    <input name="CheckOne" class="sfs-input" type="checkbox" fileName="#(vo.fileName)" />
                 </label>
                 <a href="#(vo.url)" isFile="#(vo.voIsFile)">#(vo.displayName)</a>
             </li>
@@ -43,6 +43,7 @@
              * @constructor
              */
             let PageController = function () {
+                this.$Title = $("#Title");
                 this.$fileItems = $("a[isFile=true]");
                 this.$CheckAll = $("#CheckAll");
                 this.$CheckOneItems = $("input[name=CheckOne]");
@@ -88,7 +89,47 @@
                         _this.$btnDelete.attr("disabled", noItemSelected);
                         _this.$btnDownload.attr("disabled", noItemSelected);
                     });
+                    _this.$btnDelete.click(function () {
+                        let delConfirm = window.confirm("确定删除选中的文件？");
+                        if (delConfirm) {
+                            console.log(_this.getSelectedFileData());
+                            $.ajax({
+                                url: "/DeleteFiles",
+                                type: "POST",
+                                data: JSON.stringify(_this.getSelectedFileData()),
+                                contentType: "application/json",
+                                success: function (a, b, c) {
+                                    alert("删除成功: ", a, b, c);
+                                    console.log("删除成功: ", a, b, c);
+                                },
+                                error: function (a, b, c) {
+                                    alert("删除失败", a, b, c);
+                                    console.log("删除失败", a, b, c);
+                                }
+                            })
+                        }
+                    });
                     return this;
+                },
+
+                /**
+                 * 获取已选择的文件信息.
+                 * @returns {{path: String, files: [String, ]}}
+                 */
+                getSelectedFileData: function () {
+                    let fileNames = [];
+                    $.each(this.$CheckOneItems, function (index, item) {
+                        if (item.checked) {
+                            let fileName = $(item).attr("fileName");
+                            if (fileName) {
+                                fileNames.push(fileName);
+                            }
+                        }
+                    });
+                    return {
+                        path: this.$Title.html(),
+                        files: fileNames
+                    };
                 }
 
             };
