@@ -10,16 +10,21 @@
 
     <p>
         <label for="CheckAll">
-            <input id="CheckAll" name="CheckAll" type="checkbox" />
+            <input id="CheckAll" class="sfs-input" name="CheckAll" type="checkbox" />
         </label>
         <label>全选</label>
+        &nbsp;
+        &nbsp;
+        <button id="btn-download">下载</button>
+        <button id="btn-delete" type="button">删除</button>
+        <button id="btn-upload">上传</button>
     </p>
 
     <ul>
         #for(vo: voList)
         <li>
             <label>
-                <input name="CheckOne" type="checkbox" />
+                <input name="CheckOne" class="sfs-input" type="checkbox" />
             </label>
             <a href="#(vo.url)" isFile="#(vo.voIsFile)">#(vo.displayName)</a>
         </li>
@@ -28,22 +33,68 @@
 
     <script type="text/javascript" src="/webjars/webjar-jquery/3.5.1/dist/jquery.min.js"></script>
     <script>
-        $("a[isFile=true]").click(function () {
-            window.open("about:blank").location.href = $(this).attr("href");
-            return false;
-        });
-        $("input").prop("checked", false);
-        $("#CheckAll").click(function () {
-            $("input[name=CheckOne]").prop("checked", this.checked);
-        });
-        $("input[name=CheckOne]").click(function () {
-            var $items = $("input[name=CheckOne]");
-            var checkedCount = 0;
-            $.each($items, function (index, $item) {
-                checkedCount += $item.checked ? 1 : 0;
-            });
-            $("#CheckAll").prop("checked", checkedCount === $items.length);
-        });
+
+        (function () {
+
+            /**
+             * 页面控制器对象.
+             * @constructor
+             */
+            let PageController = function () {
+                this.$fileItems = $("a[isFile=true]");
+                this.$CheckAll = $("#CheckAll");
+                this.$CheckOneItems = $("input[name=CheckOne]");
+                this.$btnDownload = $("#btn-download");
+                this.$btnDelete = $("#btn-delete");
+                this.$btnUpload = $("#btn-upload");
+            }
+
+            PageController.prototype = {
+                /**
+                 * 设置初始状态.
+                 * @returns {PageController}
+                 */
+                initialize: function () {
+                    $(".sfs-input").prop("checked", false);
+                    this.$btnDelete.attr("disabled", true);
+                    this.$btnDownload.attr("disabled", true);
+                    return this;
+                },
+
+                /**
+                 * 绑定事件.
+                 * @returns {PageController}
+                 */
+                bindEvent: function () {
+                    let _this = this;
+                    _this.$fileItems.click(function () {
+                        window.open("about:blank").location.href = $(this).attr("href");
+                        return false;
+                    });
+                    _this.$CheckAll.click(function () {
+                        _this.$CheckOneItems.prop("checked", this.checked);
+                        _this.$btnDelete.attr("disabled", !this.checked);
+                        _this.$btnDownload.attr("disabled", !this.checked);
+                    });
+                    _this.$CheckOneItems.click(function () {
+                        let checkedCount = 0;
+                        $.each(_this.$CheckOneItems, function (index, $item) {
+                            checkedCount += $item.checked ? 1 : 0;
+                        });
+                        _this.$CheckAll.prop("checked", checkedCount === _this.$CheckOneItems.length);
+                        let noItemSelected = checkedCount === 0;
+                        _this.$btnDelete.attr("disabled", noItemSelected);
+                        _this.$btnDownload.attr("disabled", noItemSelected);
+                    });
+                    return this;
+                }
+
+            };
+
+            // 页面初始化.
+            new PageController().bindEvent().initialize();
+        })();
+
     </script>
 </body>
 </html>
