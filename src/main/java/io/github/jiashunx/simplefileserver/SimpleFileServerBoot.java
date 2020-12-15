@@ -168,7 +168,7 @@ public class SimpleFileServerBoot {
         options.addOption("p", "port", true, "server port(default 8080)");
         options.addOption("path", true, "directory root path");
         this.commandLine = commandLineParser.parse(options, args);
-        this.templateContent = IOUtils.loadFileContentFromClasspath("index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.templateContent = IOUtils.loadFileContentFromClasspath("template/index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
     }
 
     private int getServerProt() {
