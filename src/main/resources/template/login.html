@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <div>
+        <input id="username" type="text" />
+        <input id="password" type="password" />
+        <button id="btn-login">登陆</button>
+    </div>
+    <script type="text/javascript" src="/webjars/webjar-jquery/3.5.1/dist/jquery.min.js"></script>
+    <script>
+        (function () {
+            let _Login_PageController = function () {
+                this.$InputUsername = $("#username");
+                this.$InputPassword = $("#password");
+                this.$BtnLogin = $("#btn-login");
+            }
+            _Login_PageController.prototype = {
+                BindEvent: function () {
+                    let _this = this;
+                    _this.$BtnLogin.click(function () {
+                        $.ajax({
+                            url: "/Login",
+                            type: "POST",
+                            data: JSON.stringify({
+                                username: _this.$InputUsername.val(),
+                                password: btoa(_this.$InputPassword.val())
+                            }),
+                            contentType: "application/json",
+                            success: function (data) {
+                                console.log("login response: ", data);
+                            }
+                        })
+                    })
+                }
+            }
+            new _Login_PageController().BindEvent();
+        })();
+    </script>
+</body>
+</html>

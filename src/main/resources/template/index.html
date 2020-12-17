@@ -44,12 +44,12 @@
              */
             let PageController = function () {
                 this.$Title = $("#Title");
-                this.$fileItems = $("a[isFile=true]");
+                this.$FileItems = $("a[isFile=true]");
                 this.$CheckAll = $("#CheckAll");
                 this.$CheckOneItems = $("input[name=CheckOne]");
-                this.$btnDownload = $("#btn-download");
-                this.$btnDelete = $("#btn-delete");
-                this.$btnUpload = $("#btn-upload");
+                this.$BtnDownload = $("#btn-download");
+                this.$BtnDelete = $("#btn-delete");
+                this.$BtnUpload = $("#btn-upload");
             }
 
             PageController.prototype = {
@@ -57,10 +57,10 @@
                  * 设置初始状态.
                  * @returns {PageController}
                  */
-                initialize: function () {
+                Initialize: function () {
                     $(".sfs-input").prop("checked", false);
-                    this.$btnDelete.attr("disabled", true);
-                    this.$btnDownload.attr("disabled", true);
+                    this.$BtnDelete.attr("disabled", true);
+                    this.$BtnDownload.attr("disabled", true);
                     return this;
                 },
 
@@ -68,16 +68,16 @@
                  * 绑定事件.
                  * @returns {PageController}
                  */
-                bindEvent: function () {
+                BindEvent: function () {
                     let _this = this;
-                    _this.$fileItems.click(function () {
+                    _this.$FileItems.click(function () {
                         window.open("about:blank").location.href = $(this).attr("href");
                         return false;
                     });
                     _this.$CheckAll.click(function () {
                         _this.$CheckOneItems.prop("checked", this.checked);
-                        _this.$btnDelete.attr("disabled", !this.checked);
-                        _this.$btnDownload.attr("disabled", !this.checked);
+                        _this.$BtnDelete.attr("disabled", !this.checked);
+                        _this.$BtnDownload.attr("disabled", !this.checked);
                     });
                     _this.$CheckOneItems.click(function () {
                         let checkedCount = 0;
@@ -86,17 +86,17 @@
                         });
                         _this.$CheckAll.prop("checked", checkedCount === _this.$CheckOneItems.length);
                         let noItemSelected = checkedCount === 0;
-                        _this.$btnDelete.attr("disabled", noItemSelected);
-                        _this.$btnDownload.attr("disabled", noItemSelected);
+                        _this.$BtnDelete.attr("disabled", noItemSelected);
+                        _this.$BtnDownload.attr("disabled", noItemSelected);
                     });
-                    _this.$btnDelete.click(function () {
+                    _this.$BtnDelete.click(function () {
                         let delConfirm = window.confirm("确定删除选中的文件？");
                         if (delConfirm) {
-                            console.log(_this.getSelectedFileData());
+                            console.log(_this.GetSelectedFileData());
                             $.ajax({
                                 url: "/DeleteFiles",
                                 type: "POST",
-                                data: JSON.stringify(_this.getSelectedFileData()),
+                                data: JSON.stringify(_this.GetSelectedFileData()),
                                 contentType: "application/json",
                                 success: function (a, b, c) {
                                     alert("删除成功: ", a, b, c);
@@ -116,7 +116,7 @@
                  * 获取已选择的文件信息.
                  * @returns {{path: String, files: [String, ]}}
                  */
-                getSelectedFileData: function () {
+                GetSelectedFileData: function () {
                     let fileNames = [];
                     $.each(this.$CheckOneItems, function (index, item) {
                         if (item.checked) {
@@ -135,9 +135,8 @@
             };
 
             // 页面初始化.
-            new PageController().bindEvent().initialize();
+            new PageController().BindEvent().Initialize();
         })();
-
     </script>
 </body>
 </html>
