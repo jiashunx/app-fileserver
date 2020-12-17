@@ -19,6 +19,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 
 public class SimpleFileServerBoot {
@@ -44,6 +45,9 @@ public class SimpleFileServerBoot {
                             response.write(render(boot.loginTemplateContent, new Kv()));
                         } else if (HttpMethod.POST.equals(request.getMethod())) {
                             // 处理具体登陆逻辑.
+                            LoginUserVo userVo = request.parseBodyToObj(LoginUserVo.class);
+                            userVo.setPassword(new String(Base64.getDecoder().decode(userVo.getPassword())));
+                            response.write(HttpResponseStatus.OK);
                         } else {
                             response.write(HttpResponseStatus.METHOD_NOT_ALLOWED);
                         }
@@ -119,6 +123,24 @@ public class SimpleFileServerBoot {
         }
         public void setFiles(List<String> files) {
             this.files = files;
+        }
+    }
+
+    public static class LoginUserVo {
+        private String username;
+        private String password;
+
+        public String getUsername() {
+            return username;
+        }
+        public void setUsername(String username) {
+            this.username = username;
+        }
+        public String getPassword() {
+            return password;
+        }
+        public void setPassword(String password) {
+            this.password = password;
         }
     }
 
