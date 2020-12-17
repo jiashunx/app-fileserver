@@ -30,8 +30,15 @@
                                 password: btoa(_this.$InputPassword.val())
                             }),
                             contentType: "application/json",
-                            success: function (data) {
-                                console.log("login response: ", data);
+                            success: function (result, status, xhr) {
+                                if (xhr.status === 200) {
+                                    window.location.href = "/";
+                                } else {
+                                    this.error(xhr);
+                                }
+                            },
+                            error: function (xhr) {
+                                alert("Login Failed, Response Status Code: " + xhr.status + ", Response Status Text: " + xhr.statusText);
                             }
                         })
                     })

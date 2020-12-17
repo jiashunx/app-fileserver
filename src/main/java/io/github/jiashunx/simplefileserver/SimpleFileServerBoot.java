@@ -7,9 +7,13 @@ import io.github.jiashunx.masker.rest.framework.MRestRequest;
 import io.github.jiashunx.masker.rest.framework.MRestResponse;
 import io.github.jiashunx.masker.rest.framework.MRestServer;
 import io.github.jiashunx.masker.rest.framework.util.IOUtils;
+import io.github.jiashunx.masker.rest.framework.util.MRestJWTHelper;
 import io.github.jiashunx.masker.rest.framework.util.MRestUtils;
+import io.github.jiashunx.masker.rest.framework.util.StringUtils;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +43,27 @@ public class SimpleFileServerBoot {
                     }
 
                     // TODO 鉴权，判断是否已登陆，目前是默认已登陆
-
+                    Cookie cookie = request.getCookie("SFS-TOKEN");
+                    String jwtToken = cookie == null ? null : cookie.value();
+                    if (StringUtils.isEmpty(jwtToken) && !requestUrl.equals("/_/Login")) {
+                        response.redirect("/_/Login");
+                        return;
+                    } else if (StringUtils.isNotEmpty(jwtToken)) {
+                        if (!boot.jwtHelper.isTokenTimeout(jwtToken) && boot.jwtHelper.isTokenValid(jwtToken)) {
+                            String newToken = boot.jwtHelper.updateToken(jwtToken);
+                            Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", newToken);
+                            jwtCookie.setPath("/");
+                            jwtCookie.setMaxAge(10*60*1000L);
+                            response.setCookie(jwtCookie);
+                        } else {
+                            Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", "");
+                            jwtCookie.setPath("/");
+                            jwtCookie.setMaxAge(10*60*1000L);
+                            response.setCookie(jwtCookie);
+                            response.redirect("/_/Login");
+                            return;
+                        }
+                    }
                     if (requestUrl.equals("/_/Login")) {
                         if (HttpMethod.GET.equals(request.getMethod())) {
                             response.write(render(boot.loginTemplateContent, new Kv()));
@@ -47,7 +71,16 @@ public class SimpleFileServerBoot {
                             // 处理具体登陆逻辑.
                             LoginUserVo userVo = request.parseBodyToObj(LoginUserVo.class);
                             userVo.setPassword(new String(Base64.getDecoder().decode(userVo.getPassword())));
-                            response.write(HttpResponseStatus.OK);
+                            if ("admin".equals(userVo.getPassword()) && "admin".equals(userVo.getPassword())) {
+                                jwtToken = boot.jwtHelper.newToken();
+                                Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", jwtToken);
+                                jwtCookie.setPath("/");
+                                jwtCookie.setMaxAge(10*60*1000L);
+                                response.setCookie(jwtCookie);
+                                response.write(HttpResponseStatus.OK);
+                            } else {
+                                response.write(HttpResponseStatus.UNAUTHORIZED);
+                            }
                         } else {
                             response.write(HttpResponseStatus.METHOD_NOT_ALLOWED);
                         }
@@ -193,6 +226,7 @@ public class SimpleFileServerBoot {
     private final CommandLine commandLine;
     private final String loginTemplateContent;
     private final String indexTemplateContent;
+    private final MRestJWTHelper jwtHelper;
 
     private SimpleFileServerBoot(String[] args) throws ParseException {
         CommandLineParser commandLineParser = new BasicParser();
@@ -203,6 +237,7 @@ public class SimpleFileServerBoot {
         this.commandLine = commandLineParser.parse(options, args);
         this.loginTemplateContent = IOUtils.loadFileContentFromClasspath("template/login.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
         this.indexTemplateContent = IOUtils.loadFileContentFromClasspath("template/index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.jwtHelper = new MRestJWTHelper("alsdfjlasdfasdfalaslflqwe0ruqpwoer");
     }
 
     private int getServerProt() {
