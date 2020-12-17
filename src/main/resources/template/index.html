@@ -94,7 +94,7 @@
                         if (delConfirm) {
                             console.log(_this.GetSelectedFileData());
                             $.ajax({
-                                url: "/DeleteFiles",
+                                url: "/_/DeleteFiles",
                                 type: "POST",
                                 data: JSON.stringify(_this.GetSelectedFileData()),
                                 contentType: "application/json",

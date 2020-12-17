@@ -3,9 +3,13 @@ package io.github.jiashunx.simplefileserver;
 import com.jfinal.kit.Kv;
 import com.jfinal.template.Engine;
 import com.jfinal.template.Template;
+import io.github.jiashunx.masker.rest.framework.MRestRequest;
+import io.github.jiashunx.masker.rest.framework.MRestResponse;
 import io.github.jiashunx.masker.rest.framework.MRestServer;
 import io.github.jiashunx.masker.rest.framework.util.IOUtils;
 import io.github.jiashunx.masker.rest.framework.util.MRestUtils;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.apache.commons.cli.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,68 +32,74 @@ public class SimpleFileServerBoot {
                 .contextPath("/")
                 .filter("/*", (request, response, filterChain) -> {
                     String requestUrl = request.getUrl();
-                    if (requestUrl.startsWith("/webjars")
-                            || requestUrl.equals("/404.html")
-                            || requestUrl.equals("/DeleteFiles")
-                            || requestUrl.equals("/DownloadFiles")
-                            || requestUrl.equals("/UploadFiles")) {
+                    if (requestUrl.startsWith("/webjars/")) {
                         filterChain.doFilter(request, response);
                         return;
                     }
-                    String localPath = boot.getRootPath() + requestUrl.substring(1);
-                    File file = new File(localPath);
-                    if (!file.exists()
-                            // 防止类似/path/../../file的情况
-                            || !formatPath(file.getAbsolutePath() + File.separator).startsWith(boot.getRootPath())) {
-                        response.forward("/404.html", request);
-                    } else if (file.isDirectory()) {
-                        File[] childFileArr = file.listFiles();
-                        assert childFileArr != null;
-                        List<FileVo> voList = new ArrayList<>(childFileArr.length + 1);
-                        if (!requestUrl.equals("/")) {
-                            FileVo vo = new FileVo();
-                            vo.absolutePath = formatPath(file.getParentFile().getAbsolutePath() + File.separator);
-                            vo.displayName = "../";
-                            if (vo.absolutePath.equals(boot.getRootPath())) {
-                                vo.url = "/";
-                            } else {
-                                vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
-                            }
-                            vo.voIsFile = false;
-                            vo.voIsDirectory = true;
-                            voList.add(vo);
+
+                    // TODO 鉴权，判断是否已登陆，目前是默认已登陆
+
+                    if (requestUrl.equals("/_/Login")) {
+                        if (HttpMethod.GET.equals(request.getMethod())) {
+                            response.write(render(boot.loginTemplateContent, new Kv()));
+                        } else if (HttpMethod.POST.equals(request.getMethod())) {
+                            // 处理具体登陆逻辑.
+                        } else {
+                            response.write(HttpResponseStatus.METHOD_NOT_ALLOWED);
                         }
-                        for (File f: childFileArr) {
-                            FileVo vo = new FileVo();
-                            vo.absolutePath = formatPath(f.getAbsolutePath() + File.separator);
-                            vo.displayName = f.getName() + (f.isDirectory() ? "/" : "");
-                            vo.fileName = f.getName();
-                            vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
-                            vo.voIsFile = f.isFile();
-                            vo.voIsDirectory = f.isDirectory();
-                            voList.add(vo);
-                        }
-                        Engine engine = Engine.use();
-                        engine.setDevMode(true);
-                        Template template = engine.getTemplateByString(boot.templateContent);
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        Kv kv = new Kv();
-                        kv.set("title", localPath);
-                        kv.set("voList", voList);
-                        template.render(kv, baos);
-                        response.write(baos.toByteArray());
-                    } else if (file.isFile()) {
-                        response.write(file);
+                    } else if (requestUrl.equals("/_/DeleteFiles") && HttpMethod.POST.equals(request.getMethod())) {
+                        SubmitFileVo fileVo = request.parseBodyToObj(SubmitFileVo.class);
+                        // TODO 执行删除文件操作（需要注意待删除文件地址的校验）
+                        response.write(HttpResponseStatus.OK);
+                    } else if (requestUrl.equals("/_/DownloadFiles") && HttpMethod.GET.equals(request.getMethod())) {
+                        response.write(HttpResponseStatus.OK);
+                    } else if (requestUrl.equals("/_/UploadFiles") && HttpMethod.POST.equals(request.getMethod())) {
+                        response.write(HttpResponseStatus.OK);
                     } else {
-                        response.forward("/404.html", request);
+                        String localPath = boot.getRootPath() + requestUrl.substring(1);
+                        File file = new File(localPath);
+                        if (!file.exists()
+                                // 防止类似/path/../../file的情况
+                                || !formatPath(file.getAbsolutePath() + File.separator).startsWith(boot.getRootPath())) {
+                            write404(request, response);
+                        } else if (file.isDirectory()) {
+                            File[] childFileArr = file.listFiles();
+                            assert childFileArr != null;
+                            List<FileVo> voList = new ArrayList<>(childFileArr.length + 1);
+                            if (!requestUrl.equals("/")) {
+                                FileVo vo = new FileVo();
+                                vo.absolutePath = formatPath(file.getParentFile().getAbsolutePath() + File.separator);
+                                vo.displayName = "../";
+                                if (vo.absolutePath.equals(boot.getRootPath())) {
+                                    vo.url = "/";
+                                } else {
+                                    vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
+                                }
+                                vo.voIsFile = false;
+                                vo.voIsDirectory = true;
+                                voList.add(vo);
+                            }
+                            for (File f: childFileArr) {
+                                FileVo vo = new FileVo();
+                                vo.absolutePath = formatPath(f.getAbsolutePath() + File.separator);
+                                vo.displayName = f.getName() + (f.isDirectory() ? "/" : "");
+                                vo.fileName = f.getName();
+                                vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
+                                vo.voIsFile = f.isFile();
+                                vo.voIsDirectory = f.isDirectory();
+                                voList.add(vo);
+                            }
+                            Kv kv = new Kv();
+                            kv.set("title", localPath);
+                            kv.set("voList", voList);
+                            response.write(render(boot.indexTemplateContent, kv));
+                        } else if (file.isFile()) {
+                            response.write(file);
+                        } else {
+                            write404(request, response);
+                        }
                     }
                 })
-                .post("/DeleteFiles", (request, response) -> {
-                    SubmitFileVo fileVo = request.parseBodyToObj(SubmitFileVo.class);
-                    // TODO 执行删除文件操作（需要注意待删除文件地址的校验）
-                })
-                .filedownload("/DownloadFiles", (request, response) -> {})
-                .fileupload("/UploadFiles", (request, response) -> {})
                 .start();
         logger.info("working directory: root path: {}", boot.getRootPath());
     }
@@ -159,7 +169,8 @@ public class SimpleFileServerBoot {
     }
 
     private final CommandLine commandLine;
-    private final String templateContent;
+    private final String loginTemplateContent;
+    private final String indexTemplateContent;
 
     private SimpleFileServerBoot(String[] args) throws ParseException {
         CommandLineParser commandLineParser = new BasicParser();
@@ -168,7 +179,8 @@ public class SimpleFileServerBoot {
         options.addOption("p", "port", true, "server port(default 8080)");
         options.addOption("path", true, "directory root path");
         this.commandLine = commandLineParser.parse(options, args);
-        this.templateContent = IOUtils.loadFileContentFromClasspath("template/index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.loginTemplateContent = IOUtils.loadFileContentFromClasspath("template/login.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.indexTemplateContent = IOUtils.loadFileContentFromClasspath("template/index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
     }
 
     private int getServerProt() {
@@ -202,6 +214,24 @@ public class SimpleFileServerBoot {
 
     private static String formatPath(String path) {
         return path.replace("\\", "/");
+    }
+
+    private static byte[] render(String template, Kv kv) {
+        Engine engine = Engine.use();
+        engine.setDevMode(true);
+        Template $template = engine.getTemplateByString(template);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        $template.render(kv, baos);
+        return baos.toByteArray();
+    }
+
+    private static final String $404_TEMPLATE = IOUtils.loadFileContentFromClasspath("template/404.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+    private static void write404(MRestRequest request, MRestResponse response) {
+        if (request.getMethod().equals(HttpMethod.GET)) {
+            response.write(render($404_TEMPLATE, new Kv().set("url", request.getOriginUrl())));
+        } else {
+            response.write(HttpResponseStatus.NOT_FOUND);
+        }
     }
 
 }
