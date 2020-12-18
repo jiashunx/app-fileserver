@@ -43,22 +43,21 @@ public class SimpleFileServerBoot {
                     }
 
                     if (boot.authEnabeld) {
-                        Cookie cookie = request.getCookie("SFS-TOKEN");
-                        String jwtToken = cookie == null ? null : cookie.value();
-                        if (StringUtils.isEmpty(jwtToken) && !requestUrl.equals("/_/Login")) {
-                            response.redirect("/_/Login");
-                            return;
-                        } else if (StringUtils.isNotEmpty(jwtToken)) {
-                            if (!boot.jwtHelper.isTokenTimeout(jwtToken) && boot.jwtHelper.isTokenValid(jwtToken)) {
+                        if (requestUrl.equals("/_/Login")) {
+                            // do nothing.
+                        } else {
+                            Cookie cookie = request.getCookie("SFS-TOKEN");
+                            String jwtToken = cookie == null ? null : cookie.value();
+                            if (StringUtils.isEmpty(jwtToken)
+                                    || StringUtils.isNotEmpty(jwtToken) && (boot.jwtHelper.isTokenTimeout(jwtToken) || !boot.jwtHelper.isTokenValid(jwtToken))) {
+                                response.redirect("/_/Login");
+                                return;
+                            } else {
                                 String newToken = boot.jwtHelper.updateToken(jwtToken);
                                 Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", newToken);
                                 jwtCookie.setPath("/");
                                 jwtCookie.setMaxAge(10*60*1000L);
                                 response.setCookie(jwtCookie);
-                            } else {
-                                response.removeCookie("SFS-TOKEN");
-                                response.redirect("/_/Login");
-                                return;
                             }
                         }
                     }
@@ -75,7 +74,7 @@ public class SimpleFileServerBoot {
                                 jwtCookie.setPath("/");
                                 jwtCookie.setMaxAge(10*60*1000L);
                                 response.setCookie(jwtCookie);
-                                response.write(HttpResponseStatus.OK);
+                                response.writeString("success");
                             } else {
                                 response.write(HttpResponseStatus.UNAUTHORIZED);
                             }

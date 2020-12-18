@@ -33,7 +33,7 @@
                             }),
                             contentType: "application/json",
                             success: function (result, status, xhr) {
-                                if (xhr.status === 200) {
+                                if (xhr.status === 200 && result === "success") {
                                     window.location.href = "/";
                                 } else {
                                     this.error(xhr);
