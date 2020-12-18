@@ -99,12 +99,42 @@ public class SimpleFileServerBoot {
                             FileUtils.deleteFile(preDelFiles.toArray(new File[0]));
                             response.write(HttpResponseStatus.OK);
                         } catch (Throwable throwable) {
+                            logger.error("delete filles failed: {}", preDelFiles, throwable);
                             response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("ErrorMessage: " + throwable.getMessage()).getBytes(StandardCharsets.UTF_8));
                         }
                     } else if (requestUrl.equals("/_/DownloadFiles") && HttpMethod.GET.equals(request.getMethod())) {
-                        response.write(HttpResponseStatus.OK);
-                    } else if (requestUrl.equals("/_/UploadFiles") && HttpMethod.POST.equals(request.getMethod())) {
-                        response.write(HttpResponseStatus.OK);
+                        String path = String.valueOf(request.getParameter("_p"));
+                        String[] names = String.valueOf(request.getParameter("_f")).split("\\^");
+                        List<File> files = new ArrayList<>();
+                        for (String name: names) {
+                            File preDownloadFile = new File(path + (path.endsWith("/") ? "" : "/") + name);
+                            String filePath = formatPath(preDownloadFile.getAbsolutePath()) + "/";
+                            if (!filePath.startsWith(boot.getRootPath()) || !filePath.startsWith(path) || filePath.equals(path)) {
+                                response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("invalid file path: " + filePath).getBytes(StandardCharsets.UTF_8));
+                                return;
+                            }
+                            if (!preDownloadFile.exists()) {
+                                response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("file not exists: " + filePath).getBytes(StandardCharsets.UTF_8));
+                                return;
+                            }
+                            files.add(preDownloadFile);
+                        }
+                        logger.info("download files: {}", files);
+                        if (files.size() == 1) {
+                            response.write(files.get(0));
+                        } else {
+                            String targetFilePath = MRestUtils.getSystemTempDirPath() + "SFS" + File.separator + System.currentTimeMillis() + File.separator + System.nanoTime() + ".zip";
+                            File targetFile = new File(targetFilePath);
+                            try {
+                                logger.info("prepare zip file: {}", targetFile);
+                                FileUtils.zip(files.toArray(new File[0]), targetFile);
+                                logger.info("download merged file: {}", targetFile);
+                                response.write(targetFile);
+                            } catch (Throwable throwable) {
+                                logger.error("zip or download file failed", throwable);
+                                response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                            }
+                        }
                     } else {
                         String localPath = boot.getRootPath() + requestUrl.substring(1);
                         File file = new File(localPath);
