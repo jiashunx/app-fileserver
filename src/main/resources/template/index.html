@@ -71,7 +71,7 @@
                 BindEvent: function () {
                     let _this = this;
                     _this.$FileItems.click(function () {
-                        window.open("about:blank").location.href = $(this).attr("href");
+                        window.open($(this).attr("href"), "_parent");
                         return false;
                     });
                     _this.$CheckAll.click(function () {
@@ -92,11 +92,11 @@
                     _this.$BtnDelete.click(function () {
                         let delConfirm = window.confirm("confirm delete choosen files ?");
                         if (delConfirm) {
-                            console.log(_this.GetSelectedFileData());
+                            console.log(_this._GetSelectedFileData());
                             $.ajax({
                                 url: "/_/DeleteFiles",
                                 type: "POST",
-                                data: JSON.stringify(_this.GetSelectedFileData()),
+                                data: JSON.stringify(_this._GetSelectedFileData()),
                                 contentType: "application/json",
                                 success: function (result, status, xhr) {
                                     if (xhr.status === 200) {
@@ -118,7 +118,7 @@
                  * 获取已选择的文件信息.
                  * @returns {{path: String, files: [String, ]}}
                  */
-                GetSelectedFileData: function () {
+                _GetSelectedFileData: function () {
                     let fileNames = [];
                     $.each(this.$CheckOneItems, function (index, item) {
                         if (item.checked) {
