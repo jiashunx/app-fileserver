@@ -129,7 +129,15 @@ public class SimpleFileServerBoot {
                                 logger.info("prepare zip file: {}", targetFile);
                                 FileUtils.zip(files.toArray(new File[0]), targetFile);
                                 logger.info("download merged file: {}", targetFile);
-                                response.write(targetFile);
+                                response.write(targetFile, f -> {
+                                    try {
+                                        File parent = f.getParentFile();
+                                        f.delete();
+                                        parent.delete();
+                                    } catch (Throwable throwable) {
+                                        logger.error("delete tmp file failed: {}", f, throwable);
+                                    }
+                                });
                             } catch (Throwable throwable) {
                                 logger.error("zip or download file failed", throwable);
                                 response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR);
