@@ -56,10 +56,7 @@ public class SimpleFileServerBoot {
                                 jwtCookie.setMaxAge(10*60*1000L);
                                 response.setCookie(jwtCookie);
                             } else {
-                                Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", "");
-                                jwtCookie.setPath("/");
-                                jwtCookie.setMaxAge(10*60*1000L);
-                                response.setCookie(jwtCookie);
+                                response.removeCookie("SFS-TOKEN");
                                 response.redirect("/_/Login");
                                 return;
                             }
