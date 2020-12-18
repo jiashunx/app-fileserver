@@ -11,4 +11,12 @@
    - 文件下载（单个、多个）
    - 文件分享下载短链接地址生成
 
+- 启动参数：
+
+   - -a | --auth 开启权限认证，默认关闭
+   - --auser 权限认证用户名，默认admin
+   - --apwd 权限认证密码，默认admin
+   - -p | --port 监听端口，默认8080
+   - --path 根目录，默认为程序运行目录
+
 [1]: https://github.com/jiashunx/masker-rest

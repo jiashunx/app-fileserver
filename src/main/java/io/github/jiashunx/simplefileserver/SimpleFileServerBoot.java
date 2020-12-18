@@ -42,26 +42,27 @@ public class SimpleFileServerBoot {
                         return;
                     }
 
-                    // TODO 鉴权，判断是否已登陆，目前是默认已登陆
-                    Cookie cookie = request.getCookie("SFS-TOKEN");
-                    String jwtToken = cookie == null ? null : cookie.value();
-                    if (StringUtils.isEmpty(jwtToken) && !requestUrl.equals("/_/Login")) {
-                        response.redirect("/_/Login");
-                        return;
-                    } else if (StringUtils.isNotEmpty(jwtToken)) {
-                        if (!boot.jwtHelper.isTokenTimeout(jwtToken) && boot.jwtHelper.isTokenValid(jwtToken)) {
-                            String newToken = boot.jwtHelper.updateToken(jwtToken);
-                            Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", newToken);
-                            jwtCookie.setPath("/");
-                            jwtCookie.setMaxAge(10*60*1000L);
-                            response.setCookie(jwtCookie);
-                        } else {
-                            Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", "");
-                            jwtCookie.setPath("/");
-                            jwtCookie.setMaxAge(10*60*1000L);
-                            response.setCookie(jwtCookie);
+                    if (boot.authEnabeld) {
+                        Cookie cookie = request.getCookie("SFS-TOKEN");
+                        String jwtToken = cookie == null ? null : cookie.value();
+                        if (StringUtils.isEmpty(jwtToken) && !requestUrl.equals("/_/Login")) {
                             response.redirect("/_/Login");
                             return;
+                        } else if (StringUtils.isNotEmpty(jwtToken)) {
+                            if (!boot.jwtHelper.isTokenTimeout(jwtToken) && boot.jwtHelper.isTokenValid(jwtToken)) {
+                                String newToken = boot.jwtHelper.updateToken(jwtToken);
+                                Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", newToken);
+                                jwtCookie.setPath("/");
+                                jwtCookie.setMaxAge(10*60*1000L);
+                                response.setCookie(jwtCookie);
+                            } else {
+                                Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", "");
+                                jwtCookie.setPath("/");
+                                jwtCookie.setMaxAge(10*60*1000L);
+                                response.setCookie(jwtCookie);
+                                response.redirect("/_/Login");
+                                return;
+                            }
                         }
                     }
                     if (requestUrl.equals("/_/Login")) {
@@ -70,9 +71,9 @@ public class SimpleFileServerBoot {
                         } else if (HttpMethod.POST.equals(request.getMethod())) {
                             // 处理具体登陆逻辑.
                             LoginUserVo userVo = request.parseBodyToObj(LoginUserVo.class);
-                            userVo.setPassword(new String(Base64.getDecoder().decode(userVo.getPassword())));
-                            if ("admin".equals(userVo.getPassword()) && "admin".equals(userVo.getPassword())) {
-                                jwtToken = boot.jwtHelper.newToken();
+                            LoginUserVo authUserVo = boot.authUserVo;
+                            if (authUserVo.username.equals(userVo.username) && authUserVo.password.equals(userVo.password)) {
+                                String jwtToken = boot.jwtHelper.newToken();
                                 Cookie jwtCookie = new DefaultCookie("SFS-TOKEN", jwtToken);
                                 jwtCookie.setPath("/");
                                 jwtCookie.setMaxAge(10*60*1000L);
@@ -162,7 +163,11 @@ public class SimpleFileServerBoot {
     public static class LoginUserVo {
         private String username;
         private String password;
-
+        public LoginUserVo() {}
+        public LoginUserVo(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
         public String getUsername() {
             return username;
         }
@@ -227,6 +232,8 @@ public class SimpleFileServerBoot {
     private final String loginTemplateContent;
     private final String indexTemplateContent;
     private final MRestJWTHelper jwtHelper;
+    private final boolean authEnabeld;
+    private final LoginUserVo authUserVo;
 
     private SimpleFileServerBoot(String[] args) throws ParseException {
         CommandLineParser commandLineParser = new BasicParser();
@@ -234,10 +241,15 @@ public class SimpleFileServerBoot {
         // java -jar xx.jar -p 8080 --port 8080
         options.addOption("p", "port", true, "server port(default 8080)");
         options.addOption("path", true, "directory root path");
+        options.addOption("a", "auth", false, "is auth enabled, default: false");
+        options.addOption("auser", true, "auth user, default: admin");
+        options.addOption("apwd", true, "auth password, default: admin");
         this.commandLine = commandLineParser.parse(options, args);
         this.loginTemplateContent = IOUtils.loadFileContentFromClasspath("template/login.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
         this.indexTemplateContent = IOUtils.loadFileContentFromClasspath("template/index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
         this.jwtHelper = new MRestJWTHelper("alsdfjlasdfasdfalaslflqwe0ruqpwoer");
+        this.authEnabeld = isAuthEnabled();
+        this.authUserVo = getAuthUserVo();
     }
 
     private int getServerProt() {
@@ -267,6 +279,28 @@ public class SimpleFileServerBoot {
             throw new IllegalArgumentException("illegal argument: path not exists or isn't directory");
         }
         return formatPath(MRestUtils.getUserDirPath());
+    }
+
+    private boolean isAuthEnabled() {
+        return commandLine.hasOption('a') || commandLine.hasOption("auth");
+    }
+
+    private LoginUserVo getAuthUserVo() {
+        String username = "admin";
+        String password = "admin";
+        if (commandLine.hasOption("auser")) {
+            String auser = commandLine.getOptionValue("auser");
+            if (!auser.isEmpty()) {
+                username = auser;
+            }
+        }
+        if (commandLine.hasOption("apwd")) {
+            String apwd = commandLine.getOptionValue("apwd");
+            if (!apwd.isEmpty()) {
+                password = apwd;
+            }
+        }
+        return new LoginUserVo(username, Base64.getEncoder().encodeToString(password.getBytes()));
     }
 
     private static String formatPath(String path) {
