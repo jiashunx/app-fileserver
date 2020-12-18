@@ -6,10 +6,7 @@ import com.jfinal.template.Template;
 import io.github.jiashunx.masker.rest.framework.MRestRequest;
 import io.github.jiashunx.masker.rest.framework.MRestResponse;
 import io.github.jiashunx.masker.rest.framework.MRestServer;
-import io.github.jiashunx.masker.rest.framework.util.IOUtils;
-import io.github.jiashunx.masker.rest.framework.util.MRestJWTHelper;
-import io.github.jiashunx.masker.rest.framework.util.MRestUtils;
-import io.github.jiashunx.masker.rest.framework.util.StringUtils;
+import io.github.jiashunx.masker.rest.framework.util.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -83,8 +80,27 @@ public class SimpleFileServerBoot {
                         }
                     } else if (requestUrl.equals("/_/DeleteFiles") && HttpMethod.POST.equals(request.getMethod())) {
                         SubmitFileVo fileVo = request.parseBodyToObj(SubmitFileVo.class);
-                        // TODO 执行删除文件操作（需要注意待删除文件地址的校验）
-                        response.write(HttpResponseStatus.OK);
+                        List<File> preDelFiles = new ArrayList<>();
+                        for (String name: fileVo.files) {
+                            File preDelFile = new File(fileVo.getPath() + (fileVo.getPath().endsWith("/") ? "" : "/") + name);
+                            String filePath = formatPath(preDelFile.getAbsolutePath()) + "/";
+                            if (!filePath.startsWith(boot.getRootPath()) || !filePath.startsWith(fileVo.path) || filePath.equals(fileVo.path)) {
+                                response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("invalid file path: " + filePath).getBytes(StandardCharsets.UTF_8));
+                                return;
+                            }
+                            if (!preDelFile.exists()) {
+                                response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("file not exists: " + filePath).getBytes(StandardCharsets.UTF_8));
+                                return;
+                            }
+                            preDelFiles.add(preDelFile);
+                        }
+                        logger.info("delete files: {}", preDelFiles);
+                        try {
+                            FileUtils.deleteFile(preDelFiles.toArray(new File[0]));
+                            response.write(HttpResponseStatus.OK);
+                        } catch (Throwable throwable) {
+                            response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("ErrorMessage: " + throwable.getMessage()).getBytes(StandardCharsets.UTF_8));
+                        }
                     } else if (requestUrl.equals("/_/DownloadFiles") && HttpMethod.GET.equals(request.getMethod())) {
                         response.write(HttpResponseStatus.OK);
                     } else if (requestUrl.equals("/_/UploadFiles") && HttpMethod.POST.equals(request.getMethod())) {

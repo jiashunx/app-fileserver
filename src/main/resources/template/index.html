@@ -90,7 +90,7 @@
                         _this.$BtnDownload.attr("disabled", noItemSelected);
                     });
                     _this.$BtnDelete.click(function () {
-                        let delConfirm = window.confirm("确定删除选中的文件？");
+                        let delConfirm = window.confirm("confirm delete choosen files ?");
                         if (delConfirm) {
                             console.log(_this.GetSelectedFileData());
                             $.ajax({
@@ -98,13 +98,15 @@
                                 type: "POST",
                                 data: JSON.stringify(_this.GetSelectedFileData()),
                                 contentType: "application/json",
-                                success: function (a, b, c) {
-                                    alert("删除成功: ", a, b, c);
-                                    console.log("删除成功: ", a, b, c);
+                                success: function (result, status, xhr) {
+                                    if (xhr.status === 200) {
+                                        alert("delete choosen files success.")
+                                    }
+                                    window.location.reload();
                                 },
-                                error: function (a, b, c) {
-                                    alert("删除失败", a, b, c);
-                                    console.log("删除失败", a, b, c);
+                                error: function (xhr, status, err) {
+                                    alert("delete choosen files failed.");
+                                    window.location.reload();
                                 }
                             })
                         }
