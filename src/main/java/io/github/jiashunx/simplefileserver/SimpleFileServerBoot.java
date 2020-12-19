@@ -165,6 +165,7 @@ public class SimpleFileServerBoot {
                                 }
                                 vo.voIsFile = false;
                                 vo.voIsDirectory = true;
+                                vo.canBeSelected = false;
                                 voList.add(vo);
                             }
                             for (File f: childFileArr) {
@@ -175,6 +176,7 @@ public class SimpleFileServerBoot {
                                 vo.url = vo.absolutePath.substring(boot.getRootPath().length() - 1);
                                 vo.voIsFile = f.isFile();
                                 vo.voIsDirectory = f.isDirectory();
+                                vo.canBeSelected = true;
                                 voList.add(vo);
                             }
                             Kv kv = new Kv();
@@ -239,6 +241,7 @@ public class SimpleFileServerBoot {
         private String url;
         private boolean voIsFile;
         private boolean voIsDirectory;
+        private boolean canBeSelected;
 
         public String getAbsolutePath() {
             return absolutePath;
@@ -275,6 +278,12 @@ public class SimpleFileServerBoot {
         }
         public void setVoIsDirectory(boolean voIsDirectory) {
             this.voIsDirectory = voIsDirectory;
+        }
+        public boolean getCanBeSelected() {
+            return canBeSelected;
+        }
+        public void setCanBeSelected(boolean canBeSelected) {
+            this.canBeSelected = canBeSelected;
         }
     }
 

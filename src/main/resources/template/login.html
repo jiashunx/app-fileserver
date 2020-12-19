@@ -15,12 +15,12 @@
     <script type="text/javascript" src="/webjars/webjar-jquery/3.5.1/dist/jquery.min.js"></script>
     <script>
         (function () {
-            let _Login_PageController = function () {
+            let PageController = function () {
                 this.$InputUsername = $("#username");
                 this.$InputPassword = $("#password");
                 this.$BtnLogin = $("#btn-login");
             }
-            _Login_PageController.prototype = {
+            PageController.prototype = {
                 BindEvent: function () {
                     let _this = this;
                     _this.$BtnLogin.click(function () {
@@ -46,7 +46,7 @@
                     })
                 }
             }
-            new _Login_PageController().BindEvent();
+            new PageController().BindEvent();
         })();
     </script>
 </body>

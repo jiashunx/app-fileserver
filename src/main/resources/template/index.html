@@ -18,14 +18,22 @@
             &nbsp;
             <button id="btn-download" type="button">下载</button>
             <button id="btn-delete" type="button">删除</button>
+            <button id="btn-upload-ctl" type="button">上传</button>
         </p>
+        <div hidden>
+            <button id="btn-upload" type="button">上传</button>
+        </div>
 
         <ul>
             #for(vo: voList)
             <li>
-                <label>
-                    <input name="CheckOne" class="sfs-input" type="checkbox" fileName="#(vo.fileName)" />
-                </label>
+                #if(vo.canBeSelected)
+                    <label>
+                        <input name="CheckOne" class="sfs-input" type="checkbox" fileName="#(vo.fileName)" />
+                    </label>
+                #else
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                #end
                 <a href="#(vo.url)" isFile="#(vo.voIsFile)">#(vo.displayName)</a>
             </li>
             #end
