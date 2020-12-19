@@ -20,8 +20,11 @@
             <button id="btn-delete" type="button">删除</button>
             <button id="btn-upload-ctl" type="button">上传</button>
         </p>
-        <div hidden>
-            <button id="btn-upload" type="button">上传</button>
+        <div hidden id="div-upload">
+            <form id="form-upload">
+                <input type="file" id="file000" name="file000" multiple="multiple">
+            </form>
+            <button type="button" id="btn-upload">保存</button>
         </div>
 
         <ul>
@@ -56,6 +59,10 @@
                 this.$CheckOneItems = $("input[name=CheckOne]");
                 this.$BtnDownload = $("#btn-download");
                 this.$BtnDelete = $("#btn-delete");
+                this.$BtnUpload = $("#btn-upload-ctl");
+                this.$UploadDiv = $("#div-upload");
+                this.$UploadForm = $("#form-upload");
+                this.$UploadBtn = $("#btn-upload");
             }
 
             PageController.prototype = {
@@ -121,6 +128,29 @@
                         let _url = "/_/DownloadFiles?_p=" + _data.path + "&_f=" + _data.files.join("^");
                         window.open(_url, "_parent");
                         return false;
+                    });
+                    _this.$BtnUpload.click(function () {
+                        _this.$UploadDiv.show();
+                    });
+                    _this.$UploadBtn.click(function () {
+                        $.ajax({
+                            url: '/_/UploadFiles?_p=' + _this._GetSelectedFileData().path,
+                            type: 'POST',
+                            data: new FormData(_this.$UploadForm[0]),
+                            cache: false,
+                            processData: false,
+                            contentType: false,
+                            success: function (result, status, xhr) {
+                                if (xhr.status === 200) {
+                                    alert("upload choosen files success.")
+                                }
+                                window.location.reload();
+                            },
+                            error: function (xhr, status, err) {
+                                alert("upload choosen files failed.");
+                                window.location.reload();
+                            }
+                        });
                     });
                     return this;
                 },

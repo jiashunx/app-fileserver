@@ -3,9 +3,11 @@ package io.github.jiashunx.simplefileserver;
 import com.jfinal.kit.Kv;
 import com.jfinal.template.Engine;
 import com.jfinal.template.Template;
+import io.github.jiashunx.masker.rest.framework.MRestFileUploadRequest;
 import io.github.jiashunx.masker.rest.framework.MRestRequest;
 import io.github.jiashunx.masker.rest.framework.MRestResponse;
 import io.github.jiashunx.masker.rest.framework.MRestServer;
+import io.github.jiashunx.masker.rest.framework.model.MRestFileUpload;
 import io.github.jiashunx.masker.rest.framework.util.*;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -142,6 +144,27 @@ public class SimpleFileServerBoot {
                                 logger.error("zip or download file failed", throwable);
                                 response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR);
                             }
+                        }
+                    } else if (requestUrl.equals("/_/UploadFiles") && request.getMethod().equals(HttpMethod.POST)) {
+                        String path = String.valueOf(request.getParameter("_p"));
+                        if (!path.endsWith("/")) {
+                            path += "/";
+                        }
+                        if (!path.startsWith(boot.getRootPath())) {
+                            response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("invalid directory path: " + path).getBytes(StandardCharsets.UTF_8));
+                            return;
+                        }
+                        try {
+                            MRestFileUploadRequest fileUploadRequest = (MRestFileUploadRequest) request;
+                            List<MRestFileUpload> fileUploadList = fileUploadRequest.getFileUploadList();
+                            for (MRestFileUpload fileUpload: fileUploadList) {
+                                String filePath = path + fileUpload.getFilename();
+                                fileUpload.copyFile(new File(filePath));
+                                logger.info("upload file success: {}", filePath);
+                            }
+                        } catch (Throwable throwable) {
+                            logger.error("upload file failed.", throwable);
+                            response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR);
                         }
                     } else {
                         String localPath = boot.getRootPath() + requestUrl.substring(1);
