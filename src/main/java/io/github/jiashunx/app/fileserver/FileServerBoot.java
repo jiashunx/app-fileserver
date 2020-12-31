@@ -1,4 +1,4 @@
-package io.github.jiashunx.simplefileserver;
+package io.github.jiashunx.app.fileserver;
 
 import com.jfinal.kit.Kv;
 import com.jfinal.template.Engine;
@@ -25,13 +25,13 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
-public class SimpleFileServerBoot {
+public class FileServerBoot {
 
-    private static final Logger logger = LoggerFactory.getLogger(SimpleFileServerBoot.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileServerBoot.class);
 
     public static void main(String[] args) throws ParseException {
         logger.info("arguments: {}", Arrays.asList(args));
-        SimpleFileServerBoot boot = new SimpleFileServerBoot(args);
+        FileServerBoot boot = new FileServerBoot(args);
         new MRestServer(boot.getServerProt())
                 .contextPath("/")
                 .filter("/*", (request, response, filterChain) -> {
@@ -317,7 +317,7 @@ public class SimpleFileServerBoot {
     private final boolean authEnabeld;
     private final LoginUserVo authUserVo;
 
-    private SimpleFileServerBoot(String[] args) throws ParseException {
+    private FileServerBoot(String[] args) throws ParseException {
         CommandLineParser commandLineParser = new BasicParser();
         Options options = new Options();
         // java -jar xx.jar -p 8080 --port 8080
@@ -327,8 +327,8 @@ public class SimpleFileServerBoot {
         options.addOption("auser", true, "auth user, default: admin");
         options.addOption("apwd", true, "auth password, default: admin");
         this.commandLine = commandLineParser.parse(options, args);
-        this.loginTemplateContent = IOUtils.loadFileContentFromClasspath("template/login.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
-        this.indexTemplateContent = IOUtils.loadFileContentFromClasspath("template/index.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.loginTemplateContent = IOUtils.loadFileContentFromClasspath("template/login.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.indexTemplateContent = IOUtils.loadFileContentFromClasspath("template/index.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
         this.jwtHelper = new MRestJWTHelper("alsdfjlasdfasdfalaslflqwe0ruqpwoer");
         this.authEnabeld = isAuthEnabled();
         this.authUserVo = getAuthUserVo();
@@ -398,7 +398,7 @@ public class SimpleFileServerBoot {
         return baos.toByteArray();
     }
 
-    private static final String $404_TEMPLATE = IOUtils.loadFileContentFromClasspath("template/404.html", SimpleFileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+    private static final String $404_TEMPLATE = IOUtils.loadFileContentFromClasspath("template/404.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
     private static void write404(MRestRequest request, MRestResponse response) {
         if (request.getMethod().equals(HttpMethod.GET)) {
             response.write(render($404_TEMPLATE, new Kv().set("url", request.getOriginUrl())));
