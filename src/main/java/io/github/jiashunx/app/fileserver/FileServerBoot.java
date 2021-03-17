@@ -33,7 +33,8 @@ public class FileServerBoot {
         logger.info("arguments: {}", Arrays.asList(args));
         FileServerBoot boot = new FileServerBoot(args);
         new MRestServer(boot.getServerProt())
-                .contextPath("/")
+                .context("/")
+                .addClasspathResource("/webjars", "META-INF/resources/webjars/")
                 .filter("/*", (request, response, filterChain) -> {
                     String requestUrl = request.getUrl();
                     if (requestUrl.startsWith("/webjars/")) {
@@ -213,6 +214,7 @@ public class FileServerBoot {
                         }
                     }
                 })
+                .getRestServer()
                 .start();
         logger.info("working directory: root path: {}", boot.getRootPath());
     }
@@ -327,8 +329,8 @@ public class FileServerBoot {
         options.addOption("auser", true, "auth user, default: admin");
         options.addOption("apwd", true, "auth password, default: admin");
         this.commandLine = commandLineParser.parse(options, args);
-        this.loginTemplateContent = IOUtils.loadFileContentFromClasspath("template/login.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
-        this.indexTemplateContent = IOUtils.loadFileContentFromClasspath("template/index.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.loginTemplateContent = IOUtils.loadContentFromClasspath("template/login.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+        this.indexTemplateContent = IOUtils.loadContentFromClasspath("template/index.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
         this.jwtHelper = new MRestJWTHelper("alsdfjlasdfasdfalaslflqwe0ruqpwoer");
         this.authEnabeld = isAuthEnabled();
         this.authUserVo = getAuthUserVo();
@@ -398,7 +400,7 @@ public class FileServerBoot {
         return baos.toByteArray();
     }
 
-    private static final String $404_TEMPLATE = IOUtils.loadFileContentFromClasspath("template/404.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
+    private static final String $404_TEMPLATE = IOUtils.loadContentFromClasspath("template/404.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
     private static void write404(MRestRequest request, MRestResponse response) {
         if (request.getMethod().equals(HttpMethod.GET)) {
             response.write(render($404_TEMPLATE, new Kv().set("url", request.getOriginUrl())));
