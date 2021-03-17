@@ -122,7 +122,7 @@ public class FileServerBoot {
                             files.add(preDownloadFile);
                         }
                         logger.info("download files: {}", files);
-                        if (files.size() == 1) {
+                        if (files.size() == 1 && files.get(0).isFile()) {
                             response.write(files.get(0));
                         } else {
                             String targetFilePath = MRestUtils.getSystemTempDirPath() + "SFS" + File.separator + System.currentTimeMillis() + File.separator + System.nanoTime() + ".zip";
