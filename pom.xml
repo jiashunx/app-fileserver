@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.jiashunx</groupId>
   <artifactId>app-fileserver</artifactId>
-  <version>1.2.1-SNAPSHOT</version>
+  <version>1.2.1</version>
   <name>app-fileserver</name>
   <packaging>jar</packaging>
   <properties>
