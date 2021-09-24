@@ -19,12 +19,17 @@
             <button id="btn-download" type="button">下载</button>
             <button id="btn-delete" type="button">删除</button>
             <button id="btn-upload-ctl" type="button">上传</button>
+            <button id="btn-mkdir" type="button">新建文件夹</button>
         </p>
         <div hidden id="div-upload">
             <form id="form-upload">
                 <input type="file" id="file000" name="file000" multiple="multiple">
             </form>
             <button type="button" id="btn-upload">保存</button>
+        </div>
+        <div hidden id="div-mkdir">
+            <input style="width: 300px;" id="newdirname" />
+            <button type="button" id="btn-mkdir0">提交</button>
         </div>
 
         <ul>
@@ -60,9 +65,12 @@
                 this.$BtnDownload = $("#btn-download");
                 this.$BtnDelete = $("#btn-delete");
                 this.$BtnUpload = $("#btn-upload-ctl");
+                this.$BtnMkdir = $("#btn-mkdir");
                 this.$UploadDiv = $("#div-upload");
                 this.$UploadForm = $("#form-upload");
                 this.$UploadBtn = $("#btn-upload");
+                this.$MkdirDiv = $("#div-mkdir");
+                this.$MkdirBtn = $("#btn-mkdir0");
             }
 
             PageController.prototype = {
@@ -152,6 +160,27 @@
                             }
                         });
                     });
+                    _this.$BtnMkdir.click(function () {
+                        _this.$MkdirDiv.show();
+                    });
+                    _this.$MkdirBtn.click(function () {
+                        $.ajax({
+                            url: '/_/Mkdir?_p=' + _this._GetCurrentPath() + '&_d=' + $("#newdirname").val(),
+                            type: "POST",
+                            data: JSON.stringify({}),
+                            contentType: "application/json",
+                            success: function (result, status, xhr) {
+                                if (xhr.status === 200) {
+                                    alert("create directory success.")
+                                }
+                                window.location.reload();
+                            },
+                            error: function (xhr, status, err) {
+                                alert("create directory failed.");
+                                window.location.reload();
+                            }
+                        })
+                    })
                     return this;
                 },
 
@@ -170,9 +199,12 @@
                         }
                     });
                     return {
-                        path: this.$Title.html(),
+                        path: this._GetCurrentPath(),
                         files: fileNames
                     };
+                },
+                _GetCurrentPath: function () {
+                    return this.$Title.html();
                 }
 
             };

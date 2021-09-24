@@ -167,6 +167,22 @@ public class FileServerBoot {
                             logger.error("upload file failed.", throwable);
                             response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR);
                         }
+                    } else if (requestUrl.equals("/_/Mkdir") && request.getMethod().equals(HttpMethod.POST)) {
+                        String path = String.valueOf(request.getParameter("_p"));
+                        if (!path.endsWith("/")) {
+                            path += "/";
+                        }
+                        if (!path.startsWith(boot.getRootPath())) {
+                            response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR, ("invalid directory path: " + path).getBytes(StandardCharsets.UTF_8));
+                            return;
+                        }
+                        String newDirPath = path + request.getParameter("_d");
+                        try {
+                            FileUtils.newDirectory(newDirPath);
+                        } catch (Throwable throwable) {
+                            logger.error("create directory[{}] failed.", newDirPath, throwable);
+                            response.write(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+                        }
                     } else {
                         String localPath = boot.getRootPath() + requestUrl.substring(1);
                         File file = new File(localPath);
