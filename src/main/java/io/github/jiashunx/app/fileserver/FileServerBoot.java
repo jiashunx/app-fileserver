@@ -9,6 +9,7 @@ import io.github.jiashunx.masker.rest.framework.MRestResponse;
 import io.github.jiashunx.masker.rest.framework.MRestServer;
 import io.github.jiashunx.masker.rest.framework.model.MRestFileUpload;
 import io.github.jiashunx.masker.rest.framework.util.*;
+import io.github.jiashunx.masker.rest.jjwt.MRestJWTHelper;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.cookie.Cookie;
