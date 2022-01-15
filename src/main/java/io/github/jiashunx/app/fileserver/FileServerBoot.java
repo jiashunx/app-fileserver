@@ -35,7 +35,6 @@ public class FileServerBoot {
         FileServerBoot boot = new FileServerBoot(args);
         new MRestServer(boot.getServerProt())
                 .context("/")
-                .addClasspathResource("/webjars", "META-INF/resources/webjars/")
                 .filter("/*", (request, response, filterChain) -> {
                     String requestUrl = request.getUrl();
                     if (requestUrl.startsWith("/webjars/")) {
