@@ -18,5 +18,11 @@
    - -a | --auth 开启权限认证，默认关闭
    - --auser 权限认证用户名，默认admin
    - --apwd 权限认证密码，默认admin
+   - --httpContentMaxMBSize
+
+```text
+example:
+java -jar --path /home/dir -p 8080 -a true --auser admin -apwd 1234.abcd --httpContentMaxMBSize 100
+```
 
 [1]: https://github.com/jiashunx/masker-rest

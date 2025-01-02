@@ -2,14 +2,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.jiashunx</groupId>
   <artifactId>app-fileserver</artifactId>
-  <version>1.2.3</version>
+  <version>1.3.0</version>
   <name>app-fileserver</name>
   <packaging>jar</packaging>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <jdk.compiler.version>1.8</jdk.compiler.version>
-    <mrf.version>1.7.1</mrf.version>
+    <mrf.version>2.3.0.RELEASE</mrf.version>
   </properties>
   <dependencies>
     <dependency>

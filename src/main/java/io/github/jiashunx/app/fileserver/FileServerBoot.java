@@ -34,6 +34,7 @@ public class FileServerBoot {
         logger.info("arguments: {}", Arrays.asList(args));
         FileServerBoot boot = new FileServerBoot(args);
         new MRestServer(boot.getServerProt())
+                .httpContentMaxMBSize(boot.getHttpContentMaxMBSize())
                 .context("/")
                 .filter("/*", (request, response, filterChain) -> {
                     String requestUrl = request.getUrl();
@@ -344,6 +345,7 @@ public class FileServerBoot {
         options.addOption("a", "auth", false, "is auth enabled, default: false");
         options.addOption("auser", true, "auth user, default: admin");
         options.addOption("apwd", true, "auth password, default: admin");
+        options.addOption("httpContentMaxMBSize", true, "http content max MB Size, default: 50MB");
         this.commandLine = commandLineParser.parse(options, args);
         this.loginTemplateContent = IOUtils.loadContentFromClasspath("template/login.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
         this.indexTemplateContent = IOUtils.loadContentFromClasspath("template/index.html", FileServerBoot.class.getClassLoader(), StandardCharsets.UTF_8);
@@ -401,6 +403,13 @@ public class FileServerBoot {
             }
         }
         return new LoginUserVo(username, Base64.getEncoder().encodeToString(password.getBytes()));
+    }
+
+    private int getHttpContentMaxMBSize() {
+        if (commandLine.hasOption("httpContentMaxMBSize")) {
+            return Integer.parseInt(commandLine.getOptionValue("httpContentMaxMBSize"));
+        }
+        return 50;
     }
 
     private static String formatPath(String path) {
