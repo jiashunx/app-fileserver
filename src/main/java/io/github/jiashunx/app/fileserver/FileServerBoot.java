@@ -369,7 +369,7 @@ public class FileServerBoot {
         if (commandLine.hasOption("path")) {
             String rootPath = commandLine.getOptionValue("path").replace("\\", "/");
             while (rootPath.length() > 1 && rootPath.endsWith("/")) {
-                rootPath = rootPath.substring(1);
+                rootPath = rootPath.substring(0, rootPath.length() - 1);
             }
             if (rootPath.length() > 1) {
                 rootPath = rootPath + "/";
